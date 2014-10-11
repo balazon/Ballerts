@@ -8,14 +8,6 @@ class ABallertsCharacter : public ACharacter
 {
 	GENERATED_UCLASS_BODY()
 
-	/** Top down camera */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-	//TSubobjectPtr<class UCameraComponent> TopDownCameraComponent;
-
-	/** Camera boom positioning the camera above the character */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-	//TSubobjectPtr<class USpringArmComponent> CameraBoom;
-
 	/** Selection effect*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Effects)
 	TSubobjectPtr<class UStaticMeshComponent> SelectedEffect;

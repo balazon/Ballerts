@@ -20,10 +20,14 @@ ABallertsCharacter::ABallertsCharacter(const class FPostConstructInitializePrope
 	CharacterMovement->bConstrainToPlane = true;
 	CharacterMovement->bSnapToPlaneAtStart = true;
 
+	
+
 	//Creating selection effect mesh
 	SelectedEffect = PCIP.CreateDefaultSubobject<UStaticMeshComponent>(this, TEXT("SelectedEffect"));
 	SelectedEffect->AttachTo(RootComponent);
 	SelectedEffect->SetVisibility(false);
+
+	
 
 }
 
