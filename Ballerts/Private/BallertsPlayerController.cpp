@@ -8,6 +8,7 @@
 
 #include "BallertsCharacter.h"
 #include "GameFramework/HUD.h"
+#include "AIControllerBase.h"
 
 
 #define SELECTION_INITSIZE 10
@@ -40,6 +41,7 @@ void ABallertsPlayerController::PlayerTick(float DeltaTime)
 
 	Delta = DeltaTime;
 }
+
 
 void ABallertsPlayerController::SetupInputComponent()
 {
@@ -114,8 +116,21 @@ void ABallertsPlayerController::MoveToTouchLocation(const ETouchIndex::Type Fing
 	}
 }
 
+void ABallertsPlayerController::MoveToActor(AActor* TargetActor)
+{
+	for (ABallertsCharacter* MyChar : SelectedUnits)
+	{
+		if (MyChar)
+		{
+			AAIControllerBase* controller = Cast<AAIControllerBase>(MyChar->GetController());
+			controller->SetTargetActor(TargetActor);
+		}
+	}
+}
+
 void ABallertsPlayerController::SetNewMoveDestination(const FVector DestLocation)
 {
+	FVector TargetLocation = FVector(DestLocation);
 	float minDistance = 10000.f;
 	ABallertsCharacter* ClosestChar = NULL;
 	UNavigationSystem* const NavSys = GetWorld()->GetNavigationSystem();
@@ -127,14 +142,14 @@ void ABallertsPlayerController::SetNewMoveDestination(const FVector DestLocation
 		if (MyChar)
 		{
 			
-			float const Distance = FVector::Dist(DestLocation, MyChar->GetActorLocation());
+			float const Distance = FVector::Dist(TargetLocation, MyChar->GetActorLocation());
 			
 
 			// We need to issue move command only if far enough in order for walk animation to play correctly
-			if (NavSys && (Distance > 10.0f))
+			if (NavSys)
 			{
 				//calculate nav path length for determining the closest pawn which will be the leader
-				UNavigationPath * MyPath = NavSys->FindPathToLocationSynchronously(GetWorld(), MyChar->GetActorLocation(), DestLocation, MyChar, 0);
+				UNavigationPath * MyPath = NavSys->FindPathToLocationSynchronously(GetWorld(), MyChar->GetActorLocation(), TargetLocation, MyChar, 0);
 				float dist = MyPath->GetPathLenght();
 				UE_LOG(LogTemp, Warning, TEXT("pathdistance %.2f"), dist);
 				
@@ -148,23 +163,39 @@ void ABallertsPlayerController::SetNewMoveDestination(const FVector DestLocation
 			}
 		}
 	}
-
-	if (PathFound && SelectedUnits.Num() > 0)
+	if (SelectedUnits.Num() > 0 && !PathFound)
+	{
+		TargetLocation.Z = 120.f;
+		
+		for (ABallertsCharacter* MyChar : SelectedUnits)
+		{
+			float dist = FVector::Dist(TargetLocation, MyChar->GetActorLocation());
+			if (dist < minDistance) {
+				minDistance = dist;
+				ClosestChar = MyChar;
+			}
+			
+		}
+		PathFound = true;
+	}
+	if (PathFound)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("leader is: %s"), *(ClosestChar->GetHumanReadableName()));
 
 		//the leader will go to destination, others should follow him
-		NavSys->SimpleMoveToLocation(ClosestChar->GetController(), DestLocation);
+		//NavSys->SimpleMoveToLocation(ClosestChar->GetController(), DestLocation);
+
+		AAIControllerBase* ClosestController = Cast<AAIControllerBase>(ClosestChar->GetController());
+		ClosestController->SetTargetLocation(TargetLocation);
 
 		for (ABallertsCharacter* MyChar : SelectedUnits)
 		{
 			if (MyChar && MyChar != ClosestChar)
 			{
-				NavSys->SimpleMoveToActor(MyChar->GetController(), ClosestChar);
-				//NavSys->SimpleMoveToLocation(MyChar->GetController(), DestLocation);
-
+				AAIControllerBase* controller = Cast<AAIControllerBase>(MyChar->GetController());
+				controller->SetTargetActor(ClosestChar);
+				//NavSys->SimpleMoveToActor(MyChar->GetController(), ClosestChar);
 			}
-
 		}
 	}
 }
@@ -217,8 +248,10 @@ void ABallertsPlayerController::MoveToFormation()
 		ABallertsCharacter* MyChar = SelectedUnits[i];
 		if (MyChar)
 		{
-			UNavigationSystem* NavSys = GetWorld()->GetNavigationSystem();
-			NavSys->SimpleMoveToLocation(MyChar->GetController(), FVector(res[i],120.f));
+			//UNavigationSystem* NavSys = GetWorld()->GetNavigationSystem();
+			//NavSys->SimpleMoveToLocation(MyChar->GetController(), FVector(res[i],120.f));
+			AAIControllerBase* Controller = Cast<AAIControllerBase>(MyChar->GetController());
+			Controller->SetTargetLocation(FVector(res[i], 120.f));
 			UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[i].X, res[i].Y);
 			CurrentTargets.Add(FVector(res[i], 120.f));
 			
@@ -266,19 +299,11 @@ void ABallertsPlayerController::OnClickPressed()
 	int32 ViewportY;
 	GetViewportSize(ViewportX, ViewportY);
 
-	if (MouseLocation.X > ViewportX * .9f)// && MouseLocation.Y > ViewportY * .9f)
+	if (MouseLocation.X > ViewportX * .9f)
 	{
-		//DeselectAll();
-		
 		return;
 	}
-	
-	/*if (MouseLocation.X > ViewportX * .9f && MouseLocation.Y > ViewportY * .4f && MouseLocation.Y < ViewportY * .6f)
-	{
-		MoveToFormation();
 
-		return;
-	}*/
 
 	if (Hit.bBlockingHit)
 	{
@@ -461,24 +486,45 @@ TArray<FVector2D> ABallertsPlayerController::TraversalPointsOnPath(TArray<FVecto
 
 void ABallertsPlayerController::OnRightClickPressed()
 {
-	//testing traversalpoints:
+	UE_LOG(LogTemp, Warning, TEXT("rightclick"));
+	FHitResult Hit;
+	GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+	FVector2D MouseLocation;
+	GetMousePosition(MouseLocation.X, MouseLocation.Y);
 
-	TArray<FVector2D> path;
-	path.Init(4);
-	path.Empty(4);
-	path.Add(FVector2D(0.f, 1.f));
-	path.Add(FVector2D(0.f, 0.f));
-	path.Add(FVector2D(1.f, 0.f));
-	path.Add(FVector2D(1.f, 1.f));
+	int32 ViewportX;
+	int32 ViewportY;
+	GetViewportSize(ViewportX, ViewportY);
 
-
-	TArray<FVector2D> res = TraversalPointsOnPath(path, 8, true);
-
-	for (FVector2D p : res)
+	if (MouseLocation.X > ViewportX * .9f)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%.3f %.3f\n"), p.X, p.Y);
-
+		return;
 	}
+
+
+	if (Hit.bBlockingHit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("rightclickedsomething"));
+
+
+		APawn* pawn = Cast<APawn>(Hit.GetActor());
+		if (pawn != NULL)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("clicked pawn"));
+
+			ABallertsCharacter* Unit = Cast<ABallertsCharacter>(pawn);
+			if (Unit != NULL)
+			{
+				MoveToActor(Unit);
+			}
+		}
+		else
+		{
+			MoveToMouseCursor();
+		}
+	}
+
+
 }
 
 

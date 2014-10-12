@@ -47,6 +47,9 @@ protected:
 	/** Navigate player to the current mouse cursor location. */
 	void MoveToMouseCursor();
 
+	/** Follow Actor*/
+	void MoveToActor(AActor* TargetActor);
+
 	/** Navigate player to the current touch location. */
 	void MoveToTouchLocation(const ETouchIndex::Type FingerIndex, const FVector Location);
 	
