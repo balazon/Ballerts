@@ -11,3 +11,13 @@ AAIControllerBase::AAIControllerBase(const class FPostConstructInitializePropert
 }
 
 
+void AAIControllerBase::SetTargetActor_Implementation(AActor* Actor)
+{
+
+}
+
+void AAIControllerBase::SetTargetLocation_Implementation(const FVector& Location)
+{
+
+}
+
