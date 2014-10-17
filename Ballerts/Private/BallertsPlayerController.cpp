@@ -574,6 +574,7 @@ void ABallertsPlayerController::OnTestButtonPressed()
 	TArray<int32> res;
 	UBalaLib::Assignment(Weights, 4, res);
 
+	//assignment has a while(true), but if the algorithm was implemented well, it shouldnt be a problem
 	UE_LOG(LogTemp, Warning, TEXT("Assignment OK"));
 
 }
