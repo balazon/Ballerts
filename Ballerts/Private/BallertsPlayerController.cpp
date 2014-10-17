@@ -241,8 +241,23 @@ void ABallertsPlayerController::MoveToFormation()
 
 
 	//get point destinations from triangle edge traversal
-
 	TArray<FVector2D> res = TraversalPointsOnPath(path, count, true);
+
+	//pair the destinations with units
+	TArray<int32> indexAssigns;
+	TArray<float> Weights;
+	Weights.Init(SelectedUnits.Num() * SelectedUnits.Num());
+	for (int i = 0; i < SelectedUnits.Num(); i++)
+	{
+		ABallertsCharacter* MyChar = SelectedUnits[i];
+		FVector Pos = MyChar->GetActorLocation();
+		FVector2D Loc2D = FVector2D(Pos.X, Pos.Y);
+		for (int j = 0; j < SelectedUnits.Num(); j++)
+		{
+			Weights[i * SelectedUnits.Num() + j] = -FVector2D::Distance(Loc2D, res[j]);
+		}
+	}
+	UBalaLib::Assignment(Weights, SelectedUnits.Num(), indexAssigns);
 
 	CurrentTargets.Init(count);
 	CurrentTargets.Empty(count);
@@ -255,9 +270,9 @@ void ABallertsPlayerController::MoveToFormation()
 			//UNavigationSystem* NavSys = GetWorld()->GetNavigationSystem();
 			//NavSys->SimpleMoveToLocation(MyChar->GetController(), FVector(res[i],120.f));
 			AAIControllerBase* Controller = Cast<AAIControllerBase>(MyChar->GetController());
-			Controller->SetTargetLocation(FVector(res[i], 120.f));
-			UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[i].X, res[i].Y);
-			CurrentTargets.Add(FVector(res[i], 120.f));
+			Controller->SetTargetLocation(FVector(res[indexAssigns[i]], 120.f));
+			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
+			CurrentTargets.Add(FVector(res[indexAssigns[i]], 120.f));
 			
 
 		}
@@ -552,7 +567,7 @@ void ABallertsPlayerController::RemoveUnitFromSelection(ABallertsCharacter* Unit
 void ABallertsPlayerController::OnTestButtonPressed()
 {
 	TArray<float> Weights;
-	Weights.Init(16);
+	/*Weights.Init(16);
 
 	Weights[0] = 8;
 	Weights[1] = 3;
@@ -569,10 +584,13 @@ void ABallertsPlayerController::OnTestButtonPressed()
 	Weights[12] = 4;
 	Weights[13] = 2;
 	Weights[14] = 7;
-	Weights[15] = 5;
+	Weights[15] = 5;*/
+	
+	Weights.Init(10000);
+	for (int i = 0; i < 10000; i++) Weights[i] = FMath::FRandRange(1.f, 10.f);
 
 	TArray<int32> res;
-	UBalaLib::Assignment(Weights, 4, res);
+	UBalaLib::Assignment(Weights, 100, res);
 
 	//assignment has a while(true), but if the algorithm was implemented well, it shouldnt be a problem
 	UE_LOG(LogTemp, Warning, TEXT("Assignment OK"));

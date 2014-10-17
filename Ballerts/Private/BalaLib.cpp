@@ -13,7 +13,7 @@ UBalaLib::UBalaLib(const class FPostConstructInitializeProperties& PCIP)
 
 #define EPS (1e-4)
 
-#define MAXN 30
+#define MAXN 100
 
 
 void UBalaLib::Assignment(TArray<float> Weights, const int32 N, TArray<int32>& Result)
