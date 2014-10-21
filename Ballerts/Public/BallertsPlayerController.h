@@ -37,6 +37,8 @@ protected:
 	float Delta;
 
 
+	
+
 
 	// Begin PlayerController interface
 	virtual void PlayerTick(float DeltaTime) override;
@@ -86,7 +88,6 @@ protected:
 	void OnTestButtonPressed();
 
 
-	TArray<FVector2D> TraversalPointsOnPath(TArray<FVector2D> path, int pointCount, bool closed);
 };
 
 

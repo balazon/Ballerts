@@ -276,3 +276,63 @@ void UBalaLib::Assignment(TArray<float> Weights, const int32 N, TArray<int32>& R
 	while (true);
 
 }
+
+
+
+//places a point to the start, and the end, and between the vertexes, with the neighbouring vertexes having equal distance
+//closed should be set to true, if the path is a closed loop
+TArray<FVector2D> UBalaLib::TraversalPointsOnPath(TArray<FVector2D> path, const int32 pointCount, bool closed = false)
+{
+	if (closed)
+	{
+		FVector2D first = path[0];
+		path.Add(first);
+	}
+	float pathLength = 0;
+	FVector2D previousPoint;
+	bool first = true;
+	TArray<float> AccumulatedDist;
+	AccumulatedDist.Init(path.Num() - 1);
+	AccumulatedDist.Empty(path.Num() - 1);
+
+	for (FVector2D point : path)
+	{
+		if (!first)
+		{
+			float d = FVector2D::Distance(point, previousPoint);
+			pathLength += d;
+			AccumulatedDist.Add(pathLength);
+		}
+		previousPoint = point;
+		first = false;
+	}
+
+	float pointDistance = pathLength / (float)(pointCount - 1);
+	if (closed)
+	{
+		pointDistance = pathLength / (float)(pointCount);
+
+	}
+
+	TArray<FVector2D> result;
+	result.Init(pointCount);
+	result.Empty(pointCount);
+
+	float currentDist = 0.f;
+	int j = 0;
+	for (int i = 0; i < pointCount; i++)
+	{
+		while (currentDist > AccumulatedDist[j])
+		{
+			j++;
+		}
+		//interpolating between two points
+		float distBefore = 0.f;
+		if (j != 0) distBefore = AccumulatedDist[j - 1];
+		float p = (AccumulatedDist[j] - currentDist) / (AccumulatedDist[j] - distBefore);
+		FVector2D point = path[j] * p + path[j + 1] * (1 - p);
+		result.Add(point);
+		currentDist += pointDistance;
+	}
+	return result;
+}

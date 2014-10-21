@@ -11,7 +11,7 @@
 #include "AIControllerBase.h"
 
 #include "BalaLib.h"
-
+#include "Formation.h"
 
 #define SELECTION_INITSIZE 10
 
@@ -223,25 +223,18 @@ void ABallertsPlayerController::MoveToFormation()
 			count++;
 		}
 	}
+	
 	Center /= count;
 	UE_LOG(LogTemp, Warning, TEXT("Center: %.2f %.2f"), Center.X, Center.Y);
 
+
+
 	float triEdge = sumCapDiameter / 3.f * 4.f;
+	UFormation* Formation = NewObject<class UFormation>();
+	
+	Formation->SetATriangle(Center, triEdge, SelectedUnits.Num());
 
-	TArray<FVector2D> path;
-	path.Init(4);
-	path.Empty(4);
-
-	float averageCapDiameter = sumCapDiameter / count;
-	path.Add(Center + FVector2D(triEdge * 0.5774f, 0.f ));
-	path.Add(Center + FVector2D(-triEdge * 0.289f, -triEdge * .5f));
-	path.Add(Center + FVector2D(-triEdge * 0.289f, triEdge * .5f));
-	//path.Add(Center + FVector2D(averageCapDiameter * .5f, triEdge * 0.5774f - averageCapDiameter * 0.866f));
-
-
-
-	//get point destinations from triangle edge traversal
-	TArray<FVector2D> res = TraversalPointsOnPath(path, count, true);
+	TArray<FVector2D> res = Formation->AllPoints();
 
 	//pair the destinations with units
 	TArray<int32> indexAssigns;
@@ -267,8 +260,6 @@ void ABallertsPlayerController::MoveToFormation()
 		ABallertsCharacter* MyChar = SelectedUnits[i];
 		if (MyChar)
 		{
-			//UNavigationSystem* NavSys = GetWorld()->GetNavigationSystem();
-			//NavSys->SimpleMoveToLocation(MyChar->GetController(), FVector(res[i],120.f));
 			AAIControllerBase* Controller = Cast<AAIControllerBase>(MyChar->GetController());
 			Controller->SetTargetLocation(FVector(res[indexAssigns[i]], 120.f));
 			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
@@ -445,63 +436,6 @@ void ABallertsPlayerController::OnPanHorizontalProcessing(float value)
 }
 
 
-//places a point to the start, and the end, and between the vertexes, with the neighbouring vertexes having equal distance
-//closed should be set to true, if the path is a closed loop
-TArray<FVector2D> ABallertsPlayerController::TraversalPointsOnPath(TArray<FVector2D> path, int pointCount, bool closed = false)
-{
-	if (closed)
-	{
-		FVector2D first = path[0];
-		path.Add(first);
-	}
-	float pathLength = 0;
-	FVector2D previousPoint;
-	bool first = true;
-	TArray<float> AccumulatedDist;
-	AccumulatedDist.Init(path.Num()-1);
-	AccumulatedDist.Empty(path.Num() - 1);
-
-	for (FVector2D point : path)
-	{
-		if (!first)
-		{
-			float d = FVector2D::Distance(point, previousPoint);
-			pathLength += d;
-			AccumulatedDist.Add(pathLength);
-		}
-		previousPoint = point;
-		first = false;
-	}
-
-	float pointDistance = pathLength / (float)(pointCount - 1);
-	if (closed)
-	{
-		pointDistance = pathLength / (float)(pointCount);
-
-	}
-
-	TArray<FVector2D> result;
-	result.Init(pointCount);
-	result.Empty(pointCount);
-
-	float currentDist = 0.f;
-	int j = 0;
-	for (int i = 0; i < pointCount; i++)
-	{
-		while (currentDist > AccumulatedDist[j])
-		{
-			j++;
-		}
-		//interpolating between two points
-		float distBefore = 0.f;
-		if (j != 0) distBefore = AccumulatedDist[j - 1];
-		float p = (AccumulatedDist[j] - currentDist) / (AccumulatedDist[j] - distBefore);
-		FVector2D point = path[j] * p + path[j + 1] * (1 - p);
-		result.Add(point);
-		currentDist += pointDistance;
-	}
-	return result;
-}
 
 void ABallertsPlayerController::OnRightClickPressed()
 {
