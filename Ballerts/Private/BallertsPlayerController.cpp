@@ -54,8 +54,8 @@ void ABallertsPlayerController::SetupInputComponent()
 	InputComponent->BindAction("SetDestination", IE_Released, this, &ABallertsPlayerController::OnSetDestinationReleased);
 
 	// support touch devices 
-	InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &ABallertsPlayerController::MoveToTouchLocation);
-	InputComponent->BindTouch(EInputEvent::IE_Repeat, this, &ABallertsPlayerController::MoveToTouchLocation);
+	//InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &ABallertsPlayerController::MoveToTouchLocation);
+	//InputComponent->BindTouch(EInputEvent::IE_Repeat, this, &ABallertsPlayerController::MoveToTouchLocation);
 
 	InputComponent->BindAction("Click", IE_Pressed, this, &ABallertsPlayerController::OnClickPressed);
 	InputComponent->BindAction("Click", IE_Released, this, &ABallertsPlayerController::OnClickReleased);
