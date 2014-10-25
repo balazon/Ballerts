@@ -179,7 +179,7 @@ void UUnitGroup::SetDestination_Implementation(const FVector& Destination)
 				//NavSys->SimpleMoveToActor(MyChar->GetController(), ClosestChar);
 				if (CurrentShape != EShapeEnum::SE_NONE)
 				{
-					controller->SetTargetLeader(ClosestChar, ClosestChar->GetActorLocation() - MyChar->GetActorLocation());
+					controller->SetTargetLeader(ClosestChar, MyChar->GetActorLocation() - ClosestChar->GetActorLocation());
 				}
 				else
 				{
