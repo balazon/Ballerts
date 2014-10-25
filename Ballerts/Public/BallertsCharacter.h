@@ -1,7 +1,12 @@
 // Copyright 1998-2014 Epic Games, Inc. All Rights Reserved.
 #pragma once
+
+
 #include "GameFramework/Character.h"
 #include "BallertsCharacter.generated.h"
+
+
+class UUnitGroup;
 
 UCLASS(Blueprintable)
 class ABallertsCharacter : public ACharacter
@@ -14,6 +19,12 @@ class ABallertsCharacter : public ACharacter
 
 
 	virtual void UpdateNavigationRelevance() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
+	UUnitGroup* UnitGroup;
+
+protected:
+	//UUnitGroup* UnitGroup;
 
 };
 

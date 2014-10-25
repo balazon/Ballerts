@@ -26,7 +26,7 @@ void AAIControllerBase::SetTargetLeader_Implementation(AActor* Actor, const FVec
 
 }
 
-void AAIControllerBase::SetTargetLocationAsLeader_Implementation(const FVector& Location, const TArray<AActor*>& Followers)
+void AAIControllerBase::SetTargetLocationAsLeader_Implementation(const FVector& Location, const TArray<ABallertsCharacter*>& Followers)
 {
-
+	
 }

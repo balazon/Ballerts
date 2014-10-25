@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "BallertsCharacter.h"
+
 #include "AIController.h"
 #include "AIControllerBase.generated.h"
 
@@ -24,5 +26,5 @@ class BALLERTS_API AAIControllerBase : public AAIController
 	
 
 	UFUNCTION(BlueprintNativeEvent, Category = Commands)
-	void SetTargetLocationAsLeader(const FVector& Location, const TArray<AActor*>& Followers);
+	void SetTargetLocationAsLeader(const FVector& Location, const TArray<ABallertsCharacter*>& Followers);
 };

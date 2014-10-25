@@ -12,6 +12,7 @@
 
 #include "BalaLib.h"
 #include "Formation.h"
+#include "UnitGroup.h"
 
 #define SELECTION_INITSIZE 10
 
@@ -134,139 +135,44 @@ void ABallertsPlayerController::MoveToActor(AActor* TargetActor)
 
 void ABallertsPlayerController::SetNewMoveDestination(const FVector DestLocation)
 {
-	FVector TargetLocation = FVector(DestLocation);
-	float minDistance = 10000.f;
-	ABallertsCharacter* ClosestChar = NULL;
-	UNavigationSystem* const NavSys = GetWorld()->GetNavigationSystem();
-
-	//UE_LOG(LogTemp, Warning, TEXT("%.3f"), DestLocation.Z);
-	bool PathFound = false;
-	for (ABallertsCharacter* MyChar : SelectedUnits)
+	UUnitGroup* UnitGroup = NULL;
+	if (SelectedUnits.Num() > 0)
 	{
-		if (MyChar)
+		UnitGroup = SelectedUnits[0]->UnitGroup;
+	}
+	bool AlreadyInUnitGroup = (UnitGroup != NULL);
+	for (int i = 0; i < SelectedUnits.Num(); i++)
+	{
+		if (UnitGroup != SelectedUnits[i]->UnitGroup)
 		{
-			
-			float const Distance = FVector::Dist(TargetLocation, MyChar->GetActorLocation());
-			
-
-			// We need to issue move command only if far enough in order for walk animation to play correctly
-			if (NavSys)
-			{
-				//calculate nav path length for determining the closest pawn which will be the leader
-				UNavigationPath * MyPath = NavSys->FindPathToLocationSynchronously(GetWorld(), MyChar->GetActorLocation(), TargetLocation, MyChar, 0);
-				float dist = MyPath->GetPathLength();
-				UE_LOG(LogTemp, Warning, TEXT("pathdistance %.2f"), dist);
-				
-				if (dist > 0.f && dist < minDistance) {
-					minDistance = dist;
-					ClosestChar = MyChar;
-					PathFound = true;
-				}
-				//Path->exec
-				//NavSys->FindPathToLocationSynchronously(GetWorld(), //NavSys->GetPathLength()
-			}
+			AlreadyInUnitGroup = false;
+			break;
 		}
 	}
-	if (SelectedUnits.Num() > 0 && !PathFound)
+	if (!AlreadyInUnitGroup)
 	{
-		TargetLocation.Z = 120.f;
-		
-		for (ABallertsCharacter* MyChar : SelectedUnits)
-		{
-			float dist = FVector::Dist(TargetLocation, MyChar->GetActorLocation());
-			if (dist < minDistance) {
-				minDistance = dist;
-				ClosestChar = MyChar;
-			}
-			
-		}
-		PathFound = true;
+		UnitGroup = NewObject<class UUnitGroup>();
+		UnitGroup->SetWorld(GetWorld());
+		UnitGroup->SetUnits(SelectedUnits);
 	}
-	if (PathFound)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("leader is: %s"), *(ClosestChar->GetHumanReadableName()));
 
-		//the leader will go to destination, others should follow him
-		//NavSys->SimpleMoveToLocation(ClosestChar->GetController(), DestLocation);
-
-		AAIControllerBase* ClosestController = Cast<AAIControllerBase>(ClosestChar->GetController());
-		ClosestController->SetTargetLocation(TargetLocation);
-
-		for (ABallertsCharacter* MyChar : SelectedUnits)
-		{
-			if (MyChar && MyChar != ClosestChar)
-			{
-				AAIControllerBase* controller = Cast<AAIControllerBase>(MyChar->GetController());
-				controller->SetTargetActor(ClosestChar);
-				//NavSys->SimpleMoveToActor(MyChar->GetController(), ClosestChar);
-			}
-		}
-	}
+	UnitGroup->SetDestination(DestLocation);
+	
 }
 
 void ABallertsPlayerController::MoveToFormation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("FORMATION"));
 
-	//calculate the triangle's shape
-	FVector2D Center = FVector2D(0.f, 0.f);
-	int count = 0;
-	float sumCapDiameter = 0.f;
-	for (ABallertsCharacter* MyChar : SelectedUnits)
+	UUnitGroup* UnitGroup = NewObject<class UUnitGroup>();
+	UnitGroup->SetWorld(GetWorld());
+	UnitGroup->SetUnits(SelectedUnits);
+	UnitGroup->MoveToFormation(EShapeEnum::SE_TRIANGLE);
+	TArray<FVector2D> FormationPoints = UnitGroup->Formation->AllPoints();
+	CurrentTargets.Init(FormationPoints.Num());
+	for (int i = 0; i < FormationPoints.Num(); i++)
 	{
-		if (MyChar)
-		{
-			FVector loc = MyChar->GetActorLocation();
-			UCapsuleComponent* cap = Cast<UCapsuleComponent>(MyChar->GetComponentByClass(UCapsuleComponent::StaticClass()));
-			sumCapDiameter += cap->GetScaledCapsuleRadius() * 2.f;
-			Center += FVector2D(loc.X, loc.Y);
-			count++;
-		}
-	}
-	
-	Center /= count;
-	UE_LOG(LogTemp, Warning, TEXT("Center: %.2f %.2f"), Center.X, Center.Y);
-
-
-
-	float triEdge = sumCapDiameter / 3.f * 4.f;
-	UFormation* Formation = NewObject<class UFormation>();
-	
-	Formation->SetATriangle(Center, triEdge, SelectedUnits.Num());
-
-	TArray<FVector2D> res = Formation->AllPoints();
-
-	//pair the destinations with units
-	TArray<int32> indexAssigns;
-	TArray<float> Weights;
-	Weights.Init(SelectedUnits.Num() * SelectedUnits.Num());
-	for (int i = 0; i < SelectedUnits.Num(); i++)
-	{
-		ABallertsCharacter* MyChar = SelectedUnits[i];
-		FVector Pos = MyChar->GetActorLocation();
-		FVector2D Loc2D = FVector2D(Pos.X, Pos.Y);
-		for (int j = 0; j < SelectedUnits.Num(); j++)
-		{
-			Weights[i * SelectedUnits.Num() + j] = -FVector2D::Distance(Loc2D, res[j]);
-		}
-	}
-	UBalaLib::Assignment(Weights, SelectedUnits.Num(), indexAssigns);
-
-	CurrentTargets.Init(count);
-	CurrentTargets.Empty(count);
-	//issue commands to move there
-	for (int32 i = 0; i < SelectedUnits.Num(); i++)
-	{
-		ABallertsCharacter* MyChar = SelectedUnits[i];
-		if (MyChar)
-		{
-			AAIControllerBase* Controller = Cast<AAIControllerBase>(MyChar->GetController());
-			Controller->SetTargetLocation(FVector(res[indexAssigns[i]], 120.f));
-			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
-			CurrentTargets.Add(FVector(res[indexAssigns[i]], 120.f));
-			
-
-		}
+		CurrentTargets[i] = FVector(FormationPoints[i], 120.f);
 	}
 }
 

@@ -28,6 +28,7 @@ protected:
 
 	TArray<ABallertsCharacter*> SelectedUnits;
 
+
 	void AddUnitToSelection(ABallertsCharacter* Unit);
 
 	void RemoveUnitFromSelection(ABallertsCharacter* Unit);

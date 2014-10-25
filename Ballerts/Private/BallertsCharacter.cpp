@@ -27,7 +27,7 @@ ABallertsCharacter::ABallertsCharacter(const class FPostConstructInitializePrope
 	SelectedEffect->AttachTo(RootComponent);
 	SelectedEffect->SetVisibility(false);
 
-
+	UnitGroup = NULL;
 }
 
 
@@ -41,3 +41,8 @@ void ABallertsCharacter::UpdateNavigationRelevance()
 	
 	//CapsuleComponent->SetCanEverAffectNavigation(true);
 }
+
+//UUnitGroup* ABallertsCharacter::GetUnitGroup()
+//{
+//	return UnitGroup;
+//}

@@ -8,6 +8,9 @@
 #include "FormationShape.h"
 #include "Formation.generated.h"
 
+
+
+
 /**
  * 
  */
@@ -25,4 +28,8 @@ class BALLERTS_API UFormation : public UObject
 
 	UFUNCTION(BlueprintNativeEvent, Category = Formation)
 	TArray<FVector2D> AllPoints();
+
+	
+
+	
 };
