@@ -48,10 +48,9 @@ void UUnitGroup::MoveToFormationTriangle_Implementation()
 
 	Formation->SetATriangle(Center, triEdge, Units.Num());
 
-	TArray<FVector2D> res = Formation->AllPoints();
+	Points = Formation->AllPoints();
 
 	//pair the destinations with units
-	TArray<int32> indexAssigns;
 	TArray<float> Weights;
 	Weights.Init(Units.Num() * Units.Num());
 	for (int i = 0; i < Units.Num(); i++)
@@ -61,7 +60,7 @@ void UUnitGroup::MoveToFormationTriangle_Implementation()
 		FVector2D Loc2D = FVector2D(Pos.X, Pos.Y);
 		for (int j = 0; j < Units.Num(); j++)
 		{
-			Weights[i * Units.Num() + j] = -FVector2D::Distance(Loc2D, res[j]);
+			Weights[i * Units.Num() + j] = -FVector2D::Distance(Loc2D, Points[j]);
 		}
 	}
 	UBalaLib::Assignment(Weights, Units.Num(), indexAssigns);
@@ -73,7 +72,7 @@ void UUnitGroup::MoveToFormationTriangle_Implementation()
 		if (MyChar)
 		{
 			AAIControllerBase* Controller = Cast<AAIControllerBase>(MyChar->GetController());
-			Controller->SetTargetLocation(FVector(res[indexAssigns[i]], 120.f));
+			Controller->SetTargetLocation(FVector(Points[indexAssigns[i]], 120.f));
 			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
 		}
 	}
@@ -171,15 +170,15 @@ void UUnitGroup::SetDestination_Implementation(const FVector& Destination)
 		
 		ClosestController->SetTargetLocationAsLeader(CurrentDestination, Followers);
 		
-		for (ABallertsCharacter* MyChar : Followers)
+		for (int i = 0; i < Units.Num(); i++)
 		{
-			if (MyChar && MyChar != ClosestChar)
+			ABallertsCharacter* Unit = Units[i];
+			if (Units[i] != Leader)
 			{
-				AAIControllerBase* controller = Cast<AAIControllerBase>(MyChar->GetController());
-				//NavSys->SimpleMoveToActor(MyChar->GetController(), ClosestChar);
+				AAIControllerBase* controller = Cast<AAIControllerBase>(Unit->GetController());
 				if (CurrentShape != EShapeEnum::SE_NONE)
 				{
-					controller->SetTargetLeader(ClosestChar, MyChar->GetActorLocation() - ClosestChar->GetActorLocation());
+					controller->SetTargetLeader(ClosestChar, FVector(Points[indexAssigns[i]], 120.f) - Leader->GetActorLocation());
 				}
 				else
 				{

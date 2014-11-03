@@ -62,4 +62,7 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
 	void MoveToFormationTriangle();
+
+	TArray<int32> indexAssigns;
+	TArray<FVector2D> Points;
 };
