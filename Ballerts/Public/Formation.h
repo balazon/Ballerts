@@ -23,11 +23,19 @@ class BALLERTS_API UFormation : public UObject
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Formation)
 	TArray<UFormationShape*> Shapes;
 
-	UFUNCTION(BlueprintNativeEvent, Category = Formation)
-	void SetATriangle(const FVector2D& Center, float side, const int32 N);
+	UFUNCTION(BlueprintCallable, Category = Formation)
+	void ClearShapes();
 
 	UFUNCTION(BlueprintNativeEvent, Category = Formation)
-	TArray<FVector2D> AllPoints();
+	void AddTriangle(const FVector2D& Center, float side, const int32 N);
+
+	/*UFUNCTION(BlueprintNativeEvent, Category = Formation)
+	TArray<FVector2D> AllPoints();*/
+
+
+	UFUNCTION(BlueprintCallable, Category = Formation)
+	void AssignAllUnits(const TArray<ABallertsCharacter*>& Units);
+
 
 	
 

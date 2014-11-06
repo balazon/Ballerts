@@ -21,6 +21,19 @@ namespace EShapeEnum
 	};
 }
 
+USTRUCT(BlueprintType)
+struct FUnitStruct
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	FVector2D AssignedPoint;
+
+	FUnitStruct()
+	{
+		AssignedPoint = FVector2D::ZeroVector;
+	}
+};
 
 /**
  * 
@@ -45,6 +58,9 @@ class BALLERTS_API UUnitGroup : public UObject
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
 	UFormation* Formation;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
+	TMap<ABallertsCharacter*, FUnitStruct> UnitData;
+
 	UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
 	void MoveToFormation(const TEnumAsByte<EShapeEnum::Type>& ShapeType);
 
@@ -57,12 +73,19 @@ class BALLERTS_API UUnitGroup : public UObject
 	UFUNCTION(Category = UnitGroup)
 	void SetUnits(TArray<ABallertsCharacter*> _Units);
 
+	UFUNCTION(Category = UnitGroup)
+	int Num();
+
+	UFUNCTION(Category = UnitGroup)
+	void AddUnit(ABallertsCharacter* Unit);
+
+	UFUNCTION(Category = UnitGroup)
+	void RemoveUnit(ABallertsCharacter* Unit);
+
 protected:
 	UWorld* World;
 
 	UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
 	void MoveToFormationTriangle();
 
-	TArray<int32> indexAssigns;
-	TArray<FVector2D> Points;
 };

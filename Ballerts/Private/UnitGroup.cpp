@@ -48,7 +48,7 @@ void UUnitGroup::MoveToFormationTriangle_Implementation()
 
 	Formation->SetATriangle(Center, triEdge, Units.Num());
 
-	Points = Formation->AllPoints();
+	TArray<FVector2D> Points = Formation->AllPoints();
 
 	//pair the destinations with units
 	TArray<float> Weights;
@@ -63,6 +63,7 @@ void UUnitGroup::MoveToFormationTriangle_Implementation()
 			Weights[i * Units.Num() + j] = -FVector2D::Distance(Loc2D, Points[j]);
 		}
 	}
+	TArray<int32> indexAssigns; TArray<FVector2D> Points;
 	UBalaLib::Assignment(Weights, Units.Num(), indexAssigns);
 
 	//issue commands to move there
@@ -71,6 +72,7 @@ void UUnitGroup::MoveToFormationTriangle_Implementation()
 		ABallertsCharacter* MyChar = Units[i];
 		if (MyChar)
 		{
+			UnitData[MyChar].AssignedPoint = Points[indexAssigns[i]];
 			AAIControllerBase* Controller = Cast<AAIControllerBase>(MyChar->GetController());
 			Controller->SetTargetLocation(FVector(Points[indexAssigns[i]], 120.f));
 			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
@@ -123,7 +125,7 @@ void UUnitGroup::SetDestination_Implementation(const FVector& Destination)
 				//calculate nav path length for determining the closest pawn which will be the leader
 				UNavigationPath * MyPath = NavSys->FindPathToLocationSynchronously(GetWorld(), MyChar->GetActorLocation(), CurrentDestination, MyChar, 0);
 				float dist = MyPath->GetPathLength();
-				UE_LOG(LogTemp, Warning, TEXT("pathdistance %.2f"), dist);
+				//UE_LOG(LogTemp, Warning, TEXT("pathdistance %.2f"), dist);
 
 				if (dist > 0.f && dist < minDistance) {
 					minDistance = dist;
@@ -202,4 +204,31 @@ void UUnitGroup::SetUnits(TArray<ABallertsCharacter*> _Units)
 	{
 		Units[i]->UnitGroup = this;
 	}
+}
+
+
+void UUnitGroup::AddUnit(ABallertsCharacter* Unit)
+{
+	Units.Add(Unit);
+}
+
+void UUnitGroup::RemoveUnit(ABallertsCharacter* Unit)
+{
+	//maintain order and flatten array
+	Units.Remove(Unit);
+	TArray<ABallertsCharacter*> UnitCopy = Units;
+	Units.Empty();
+	for (int i = 0; i < UnitCopy.Num(); i++)
+	{
+		ABallertsCharacter* AUnit = UnitCopy[i];
+		if (AUnit)
+		{
+			Units.Add(AUnit);
+		}
+	}
+}
+
+int UUnitGroup::Num()
+{
+	return Units.Num();
 }

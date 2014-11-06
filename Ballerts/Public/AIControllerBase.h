@@ -16,6 +16,9 @@ class BALLERTS_API AAIControllerBase : public AAIController
 	GENERATED_UCLASS_BODY()
 
 	UFUNCTION(BlueprintNativeEvent, Category = Commands)
+	void SetShape(UFormationShape* Shape);
+
+	UFUNCTION(BlueprintNativeEvent, Category = Commands)
 	void SetTargetLocation(const FVector& Location);
 
 	UFUNCTION(BlueprintNativeEvent, Category = Commands)

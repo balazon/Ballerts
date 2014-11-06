@@ -162,10 +162,49 @@ void ABallertsPlayerController::SetNewMoveDestination(const FVector DestLocation
 
 void ABallertsPlayerController::MoveToFormation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("FORMATION"));
 
-	UUnitGroup* UnitGroup = NewObject<class UUnitGroup>();
-	UnitGroup->SetWorld(GetWorld());
+	UUnitGroup* UnitGroup = NULL;
+	if (SelectedUnits.Num() > 0)
+	{
+		UnitGroup = SelectedUnits[0]->UnitGroup;
+	}
+	bool AlreadyInUnitGroup = (UnitGroup != NULL);
+	for (int i = 0; i < SelectedUnits.Num(); i++)
+	{
+		if (UnitGroup != SelectedUnits[i]->UnitGroup)
+		{
+			AlreadyInUnitGroup = false;
+			break;
+		}
+	}
+	if (AlreadyInUnitGroup)
+	{
+		if (UnitGroup->Num() > SelectedUnits.Num())
+		{
+
+		}
+		else
+		{
+			UnitGroup->SetUnits(SelectedUnits);
+		}
+	}
+	if (!AlreadyInUnitGroup)
+	{
+		UnitGroup = NewObject<class UUnitGroup>();
+		UnitGroup->SetWorld(GetWorld());
+	}
+	else if (UnitGroup->CurrentShape != EShapeEnum::SE_NONE)
+	{
+		UnitGroup->MoveToFormation(EShapeEnum::SE_NONE);
+		UE_LOG(LogTemp, Warning, TEXT("FORMATION"));
+		return;
+	}
+	
+		
+
+	
+		
+	
 	UnitGroup->SetUnits(SelectedUnits);
 	UnitGroup->MoveToFormation(EShapeEnum::SE_TRIANGLE);
 	TArray<FVector2D> FormationPoints = UnitGroup->Formation->AllPoints();
@@ -174,6 +213,8 @@ void ABallertsPlayerController::MoveToFormation()
 	{
 		CurrentTargets[i] = FVector(FormationPoints[i], 120.f);
 	}
+	
+	
 }
 
 void ABallertsPlayerController::OnSetDestinationPressed()
@@ -251,6 +292,13 @@ void ABallertsPlayerController::OnClickPressed()
 		{
 			//give move command to move
 			UE_LOG(LogTemp, Warning, TEXT("MOVE COMMAND_A"));
+			for (ABallertsCharacter* Unit : SelectedUnits)
+			{
+				AAIControllerBase* AIControl = Cast<AAIControllerBase>(Unit->GetController());
+				FVector loc = Unit->GetActorLocation();
+				UE_LOG(LogTemp, Warning, TEXT("Unit ai: %s , pos: %.1f %.1f %.1f"), *(AActor::GetDebugName(AIControl)), loc.X, loc.Y, loc.Z);
+
+			}
 			MoveToMouseCursor();
 		}
 	}
