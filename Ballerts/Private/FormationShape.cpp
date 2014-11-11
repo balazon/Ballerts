@@ -11,11 +11,13 @@
 UFormationShape::UFormationShape(const class FPostConstructInitializeProperties& PCIP)
 	: Super(PCIP)
 {
-
+	Leader = NULL;
 }
 
 
-void UFormationShape::SetATriangle_Implementation(const FVector2D& Center, float side, const int32 N)
+
+
+void UFormationShape::SetATriangle(const FVector2D& Center, float side, const int32 N)
 {
 	Pivot = Center;
 	TArray<FVector2D> path;
@@ -50,8 +52,15 @@ int32 UFormationShape::IndexOfShape(int32 index, const TArray<int32>& ShapeIndic
 }
 
 
-void UFormationShape::AssignShapesToUnits(const TArray<UFormationShape*>& Shapes, TArray<ABallertsCharacter*>& Units)
+void UFormationShape::AssignShapesToUnits(const TArray<UFormationShape*>& Shapes, const TArray<ABallertsCharacter*>& Units)
 {
+
+	for (int i = 0; i < Shapes.Num(); i++)
+	{
+		UFormationShape* Shape = Shapes[i];
+		Shape->Assignments.Empty();
+	}
+
 	TArray<int> ShapeIndices;
 	TArray<FVector2D> AllPoints = UFormationShape::AllPoints(Shapes, ShapeIndices);
 	if (AllPoints.Num() != Units.Num())
@@ -72,7 +81,7 @@ void UFormationShape::AssignShapesToUnits(const TArray<UFormationShape*>& Shapes
 		for (int j = 0; j < Units.Num(); j++)
 		{
 			int index = IndexOfShape(j, ShapeIndices);
-			FVector2D offset = Shapes[index].Pivot;
+			FVector2D offset = Shapes[index]->Pivot;
 			Weights[i * Units.Num() + j] = -FVector2D::Distance(Loc2D, AllPoints[j] + offset);
 		}
 	}
@@ -89,13 +98,16 @@ void UFormationShape::AssignShapesToUnits(const TArray<UFormationShape*>& Shapes
 			int j = IndexOfShape(indexAssigns[i], ShapeIndices);
 			
 			Controller->SetShape(Shapes[ShapeIndices[j]]);
-			Shapes[ShapeIndices[j]]->Assignments[Controller] = indexAssigns[i] - ShapeIndices[j];
+			//UFormationShape* Shape = Shapes[ShapeIndices[j]];
+			//Shape->Assignments[Controller] = 0;
+			
+			Shapes[ShapeIndices[j]]->Assignments.Add(Controller, indexAssigns[i] - ShapeIndices[j]);
 			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
 		}
 	}
 }
 
-TArray<FVector2D> UFormationShape::AllPoints(const TArray<UFormationShape*>& Shapes, TArray<int>& ShapeIndices)
+TArray<FVector2D> UFormationShape::AllPoints(const TArray<UFormationShape*>& Shapes, TArray<int32>& ShapeIndices)
 {
 	TArray<FVector2D> Res;
 	int ResSize = 0;
@@ -126,16 +138,45 @@ TArray<FVector2D> UFormationShape::AllPoints(const TArray<UFormationShape*>& Sha
 FVector2D UFormationShape::TransformedPoint(AAIControllerBase* Controller)
 {
 	int index = Assignments[Controller];
-	
+
 	//should later transform point according to rotation, and other transformations
+	if (Leader)
+	{
+		if (Controller == Leader->GetController())
+		{
+			return Controller->LeaderTarget;
+		}
+		FVector Loc = Leader->GetActorLocation();
+		FVector2D LeaderCurrent = FVector2D(Loc.X, Loc.Y);
+		FVector2D PointStart = Points[index] + Pivot;
+		FVector2D Translation = LeaderCurrent - LeaderStart;
+		FVector2D Result = PointStart + Translation;
+		return Points[index] + Pivot + LeaderCurrent - LeaderStart;
+	}
 	return Points[index] + Pivot;
 }
 
 
-static UFormationShape* CreateTriangle(const FVector2D& Center, float side, const int32 N)
+
+UFormationShape* UFormationShape::CreateTriangle(const FVector2D& Center, float side, const int32 N)
 {
 	UFormationShape* MyShape = NewObject<class UFormationShape>();
 	MyShape->SetATriangle(Center, side, N);
 
 	return MyShape;
+}
+
+void UFormationShape::BindToLeader(ABallertsCharacter* TheLeader)
+{
+	Leader = TheLeader;
+	if (Leader)
+	{
+		AAIControllerBase* Controller = Cast<AAIControllerBase>(Leader->GetController());
+		LeaderStart = Points[Assignments[Controller]] + Pivot;
+	}
+}
+
+void UFormationShape::Rotate(float angle)
+{
+	rotationAngle += angle;
 }

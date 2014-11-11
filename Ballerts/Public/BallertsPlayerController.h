@@ -18,11 +18,8 @@ class ABallertsPlayerController : public APlayerController
 	UFUNCTION(BlueprintCallable, Category = Commands)
 	void MoveToFormation();
 
-	UFUNCTION(BlueprintCallable, Category = Commands)
-	TArray<FVector> GetTargets();
 protected:
 
-	TArray<FVector> CurrentTargets;
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
 
@@ -68,6 +65,8 @@ protected:
 
 	void OnIncreaseSelectionPressed();
 	void OnIncreaseSelectionReleased();
+
+	void TouchPressed(const ETouchIndex::Type FingerIndex, const FVector Location);
 
 	
 

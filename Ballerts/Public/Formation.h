@@ -26,7 +26,7 @@ class BALLERTS_API UFormation : public UObject
 	UFUNCTION(BlueprintCallable, Category = Formation)
 	void ClearShapes();
 
-	UFUNCTION(BlueprintNativeEvent, Category = Formation)
+	UFUNCTION(BlueprintCallable, Category = Formation)
 	void AddTriangle(const FVector2D& Center, float side, const int32 N);
 
 	/*UFUNCTION(BlueprintNativeEvent, Category = Formation)
@@ -36,7 +36,8 @@ class BALLERTS_API UFormation : public UObject
 	UFUNCTION(BlueprintCallable, Category = Formation)
 	void AssignAllUnits(const TArray<ABallertsCharacter*>& Units);
 
-
+	UFUNCTION(BlueprintCallable, Category = Formation)
+	void BindAllShapesToLeader(ABallertsCharacter* TheLeader);
 	
 
 	

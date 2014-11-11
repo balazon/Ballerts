@@ -30,4 +30,10 @@ class BALLERTS_API AAIControllerBase : public AAIController
 
 	UFUNCTION(BlueprintNativeEvent, Category = Commands)
 	void SetTargetLocationAsLeader(const FVector& Location, const TArray<ABallertsCharacter*>& Followers);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Formation)
+	UFormationShape* CurrentShape;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Formation)
+	FVector2D LeaderTarget;
 };

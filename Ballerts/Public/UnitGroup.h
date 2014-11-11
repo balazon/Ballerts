@@ -15,25 +15,25 @@ namespace EShapeEnum
 {
 	enum Type
 	{
-		SE_TRIANGLE,
+		SE_ONE_TRIANGLE,
 		SE_SQUARE,
 		SE_NONE
 	};
 }
 
-USTRUCT(BlueprintType)
-struct FUnitStruct
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	FVector2D AssignedPoint;
-
-	FUnitStruct()
-	{
-		AssignedPoint = FVector2D::ZeroVector;
-	}
-};
+//USTRUCT(BlueprintType)
+//struct FUnitStruct
+//{
+//	GENERATED_USTRUCT_BODY()
+//
+//	UPROPERTY()
+//	FVector2D AssignedPoint;
+//
+//	FUnitStruct()
+//	{
+//		AssignedPoint = FVector2D::ZeroVector;
+//	}
+//};
 
 /**
  * 
@@ -50,7 +50,7 @@ class BALLERTS_API UUnitGroup : public UObject
 	ABallertsCharacter* Leader;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
-	FVector CurrentDestination;
+	FVector2D CurrentTarget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UnitGroup)
 	TEnumAsByte<EShapeEnum::Type> CurrentShape;
@@ -58,34 +58,55 @@ class BALLERTS_API UUnitGroup : public UObject
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
 	UFormation* Formation;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
-	TMap<ABallertsCharacter*, FUnitStruct> UnitData;
+	/*UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
+	TMap<ABallertsCharacter*, FUnitStruct> UnitData;*/
 
-	UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
-	void MoveToFormation(const TEnumAsByte<EShapeEnum::Type>& ShapeType);
+	
+	UFUNCTION(BlueprintCallable, Category = MoveCommand)
+	static void Move(FVector2D Target, const TArray<ABallertsCharacter*> SelectedUnits);
+	
+	UFUNCTION(BlueprintCallable, Category = FormationCommand)
+	static void MoveToFormation(const TArray<ABallertsCharacter*> SelectedUnits, const TEnumAsByte<EShapeEnum::Type>& ShapeType);
 
-	UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
-	void SetDestination(const FVector& Destination);
+	UFUNCTION(BlueprintCallable, Category = UnitGroup)
+	void MoveToFormationPreset(const TEnumAsByte<EShapeEnum::Type>& ShapeType);
+	
 
-	UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
-	void SetWorld(UWorld* _World);
 
-	UFUNCTION(Category = UnitGroup)
-	void SetUnits(TArray<ABallertsCharacter*> _Units);
+	UFUNCTION(BlueprintCallable, Category = UnitGroup)
+	void SetUnits(TArray<ABallertsCharacter*> TheUnits);
 
-	UFUNCTION(Category = UnitGroup)
-	int Num();
-
-	UFUNCTION(Category = UnitGroup)
+	UFUNCTION(BlueprintCallable, Category = UnitGroup)
 	void AddUnit(ABallertsCharacter* Unit);
 
-	UFUNCTION(Category = UnitGroup)
+	UFUNCTION(BlueprintCallable, Category = UnitGroup)
 	void RemoveUnit(ABallertsCharacter* Unit);
 
+	UFUNCTION(BlueprintCallable, Category = UnitGroup)
+	int32 Num();
+
+	/*UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
+	void SetDestination(const FVector& Destination);*/
+
+	UFUNCTION(BlueprintCallable, Category = UnitGroup)
+	static void SetWorld(UWorld* _World);
+
+
+
+
+
+	
+
 protected:
-	UWorld* World;
+	static UWorld* World;
 
 	UFUNCTION(BlueprintNativeEvent, Category = UnitGroup)
 	void MoveToFormationTriangle();
+
+	//calculating leader and giving move commands
+	UFUNCTION(BlueprintCallable, Category = UnitGroup)
+	void RecalculateMovement();
+
+
 
 };

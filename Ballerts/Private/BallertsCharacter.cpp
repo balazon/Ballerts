@@ -46,3 +46,10 @@ void ABallertsCharacter::UpdateNavigationRelevance()
 //{
 //	return UnitGroup;
 //}
+
+
+FVector2D ABallertsCharacter::GetActorLocation2D()
+{
+	FVector Loc = GetActorLocation();
+	return FVector2D(Loc.X, Loc.Y);
+}

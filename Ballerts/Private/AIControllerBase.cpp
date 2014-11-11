@@ -30,3 +30,9 @@ void AAIControllerBase::SetTargetLocationAsLeader_Implementation(const FVector& 
 {
 	
 }
+
+
+void AAIControllerBase::SetShape_Implementation(UFormationShape* Shape)
+{
+	CurrentShape = Shape;
+}

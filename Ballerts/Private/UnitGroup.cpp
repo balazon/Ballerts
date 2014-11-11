@@ -20,6 +20,8 @@ UUnitGroup::UUnitGroup(const class FPostConstructInitializeProperties& PCIP)
 	CurrentShape = EShapeEnum::SE_NONE;
 }
 
+UWorld* UUnitGroup::World = NULL;
+
 
 void UUnitGroup::MoveToFormationTriangle_Implementation()
 {
@@ -46,90 +48,41 @@ void UUnitGroup::MoveToFormationTriangle_Implementation()
 
 	float triEdge = sumCapDiameter / 3.f * 4.f;
 
-	Formation->SetATriangle(Center, triEdge, Units.Num());
+	Formation->ClearShapes();
+	Formation->AddTriangle(Center, triEdge, Units.Num());
 
-	TArray<FVector2D> Points = Formation->AllPoints();
-
-	//pair the destinations with units
-	TArray<float> Weights;
-	Weights.Init(Units.Num() * Units.Num());
-	for (int i = 0; i < Units.Num(); i++)
-	{
-		ABallertsCharacter* MyChar = Units[i];
-		FVector Pos = MyChar->GetActorLocation();
-		FVector2D Loc2D = FVector2D(Pos.X, Pos.Y);
-		for (int j = 0; j < Units.Num(); j++)
-		{
-			Weights[i * Units.Num() + j] = -FVector2D::Distance(Loc2D, Points[j]);
-		}
-	}
-	TArray<int32> indexAssigns; TArray<FVector2D> Points;
-	UBalaLib::Assignment(Weights, Units.Num(), indexAssigns);
-
-	//issue commands to move there
-	for (int32 i = 0; i < Units.Num(); i++)
-	{
-		ABallertsCharacter* MyChar = Units[i];
-		if (MyChar)
-		{
-			UnitData[MyChar].AssignedPoint = Points[indexAssigns[i]];
-			AAIControllerBase* Controller = Cast<AAIControllerBase>(MyChar->GetController());
-			Controller->SetTargetLocation(FVector(Points[indexAssigns[i]], 120.f));
-			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
-		}
-	}
+	Formation->AssignAllUnits(Units);
 }
 
 
 
-void UUnitGroup::MoveToFormation_Implementation(const TEnumAsByte<EShapeEnum::Type>& ShapeType)
+
+void UUnitGroup::RecalculateMovement()
 {
-	CurrentShape = ShapeType;
-	switch (ShapeType)
-	{
-	case EShapeEnum::SE_TRIANGLE:
-		MoveToFormationTriangle();
-		break;
-	case EShapeEnum::SE_SQUARE:
-		break;
-	case EShapeEnum::SE_NONE:
-		break;
-	}
-}
-
-
-void UUnitGroup::SetDestination_Implementation(const FVector& Destination)
-{
-	CurrentDestination = Destination;
-
-	CurrentDestination.Z = 120.f;
+	//TODO make this code clean, currently it is roughly just copied from the old setdestination func
 
 
 	float minDistance = 10000.f;
-	ABallertsCharacter* ClosestChar = NULL;
+	ABallertsCharacter* ClosestUnit = NULL;
 	UNavigationSystem* const NavSys = World->GetNavigationSystem();
 
 	//UE_LOG(LogTemp, Warning, TEXT("%.3f"), DestLocation.Z);
 	bool PathFound = false;
-	for (ABallertsCharacter* MyChar : Units)
+	for (ABallertsCharacter* Unit : Units)
 	{
-		if (MyChar)
+		if (Unit)
 		{
-
-			float const Distance = FVector::Dist(CurrentDestination, MyChar->GetActorLocation());
-
-
 			// We need to issue move command only if far enough in order for walk animation to play correctly
 			if (NavSys)
 			{
 				//calculate nav path length for determining the closest pawn which will be the leader
-				UNavigationPath * MyPath = NavSys->FindPathToLocationSynchronously(GetWorld(), MyChar->GetActorLocation(), CurrentDestination, MyChar, 0);
+				UNavigationPath * MyPath = NavSys->FindPathToLocationSynchronously(GetWorld(), Unit->GetActorLocation(), FVector(CurrentTarget.X,CurrentTarget.Y, 120.f), Unit, 0);
 				float dist = MyPath->GetPathLength();
 				//UE_LOG(LogTemp, Warning, TEXT("pathdistance %.2f"), dist);
 
 				if (dist > 0.f && dist < minDistance) {
 					minDistance = dist;
-					ClosestChar = MyChar;
+					ClosestUnit = Unit;
 					PathFound = true;
 				}
 				//Path->exec
@@ -141,12 +94,12 @@ void UUnitGroup::SetDestination_Implementation(const FVector& Destination)
 	if (Units.Num() > 0 && !PathFound)
 	{
 
-		for (ABallertsCharacter* MyChar : Units)
+		for (ABallertsCharacter* Unit : Units)
 		{
-			float dist = FVector::Dist(CurrentDestination, MyChar->GetActorLocation());
+			float dist = FVector2D::Distance(CurrentTarget, Unit->GetActorLocation2D());
 			if (dist < minDistance) {
 				minDistance = dist;
-				ClosestChar = MyChar;
+				ClosestUnit = Unit;
 			}
 
 		}
@@ -154,51 +107,188 @@ void UUnitGroup::SetDestination_Implementation(const FVector& Destination)
 	}
 	if (PathFound)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("leader is: %s"), *(ClosestChar->GetHumanReadableName()));
+		UE_LOG(LogTemp, Warning, TEXT("leader is: %s"), *(ClosestUnit->GetHumanReadableName()));
 
 		//the leader will go to destination, others should follow him
 		//NavSys->SimpleMoveToLocation(ClosestChar->GetController(), DestLocation);
-		Leader = ClosestChar;
+		Leader = ClosestUnit;
 
-		TArray<ABallertsCharacter*> Followers;
-		Followers.Empty(Units.Num() - 1);
-		for (int i = 0; i < Units.Num(); i++)
-		{
-			if (Units[i] != Leader)
-				Followers.Add(Units[i]);
-		}
+		Formation->BindAllShapesToLeader(Leader);
 
-		AAIControllerBase* ClosestController = Cast<AAIControllerBase>(ClosestChar->GetController());
-		
-		ClosestController->SetTargetLocationAsLeader(CurrentDestination, Followers);
-		
-		for (int i = 0; i < Units.Num(); i++)
-		{
-			ABallertsCharacter* Unit = Units[i];
-			if (Units[i] != Leader)
-			{
-				AAIControllerBase* controller = Cast<AAIControllerBase>(Unit->GetController());
-				if (CurrentShape != EShapeEnum::SE_NONE)
-				{
-					controller->SetTargetLeader(ClosestChar, FVector(Points[indexAssigns[i]], 120.f) - Leader->GetActorLocation());
-				}
-				else
-				{
-					controller->SetTargetActor(ClosestChar);
-				}
-			}
-		}
+		AAIControllerBase* Controller = Cast<AAIControllerBase>(Leader->GetController());
+		Controller->LeaderTarget = CurrentTarget;
 	}
 }
 
-void UUnitGroup::SetWorld_Implementation(UWorld* _World)
+void UUnitGroup::Move(FVector2D Target, const TArray<ABallertsCharacter*> SelectedUnits)
+{
+	UUnitGroup* UnitGroup = NULL;
+	TArray<UUnitGroup*> OldGroups;
+	OldGroups.Empty();
+	if (SelectedUnits.Num() > 0)
+	{
+		UnitGroup = SelectedUnits[0]->UnitGroup;
+	}
+	else
+	{
+		return;
+	}
+	for (int i = 0; i < SelectedUnits.Num(); i++)
+	{
+		UUnitGroup* OldGroup = SelectedUnits[i]->UnitGroup;
+		if (UnitGroup != OldGroup && OldGroup != NULL)
+		{
+			OldGroups.Add(SelectedUnits[i]->UnitGroup);
+		}
+	}
+	for (int i = 0; i < OldGroups.Num(); i++)
+	{
+		UUnitGroup* OldGroup = OldGroups[i];
+		for (int j = 0; j < SelectedUnits.Num(); j++)
+		{
+			OldGroup->RemoveUnit(SelectedUnits[j]);
+		}
+		OldGroup->RecalculateMovement();
+	}
+	bool AlreadyInUnitGroup = (UnitGroup != NULL) && (OldGroups.Num() == 0);
+	if (AlreadyInUnitGroup)
+	{
+		if (UnitGroup->Num() > SelectedUnits.Num())
+		{
+			//oldgroup contains all the selected units and more
+			//now it will contain only the "more"
+			UUnitGroup* OldGroup = UnitGroup;
+			for (int i = 0; i < SelectedUnits.Num(); i++)
+			{
+				OldGroup->RemoveUnit(SelectedUnits[i]);
+
+			}
+			
+
+			UnitGroup = NewObject<class UUnitGroup>();
+			UnitGroup->SetUnits(SelectedUnits);
+			UnitGroup->CurrentTarget = Target;
+			UnitGroup->RecalculateMovement();
+
+			if (SelectedUnits.Contains(UnitGroup->Leader))
+			{
+				OldGroup->RecalculateMovement();
+			}
+		}
+		else
+		{
+			UnitGroup->SetUnits(SelectedUnits);
+			UnitGroup->CurrentTarget = Target;
+			UnitGroup->RecalculateMovement();
+		}
+	}
+	if (!AlreadyInUnitGroup)
+	{
+		UnitGroup = NewObject<class UUnitGroup>();
+		UnitGroup->SetUnits(SelectedUnits);
+		UnitGroup->CurrentTarget = Target;
+		UnitGroup->RecalculateMovement();
+	}
+}
+
+void UUnitGroup::MoveToFormation(const TArray<ABallertsCharacter*> SelectedUnits, const TEnumAsByte<EShapeEnum::Type>& ShapeType)
+{
+
+	UUnitGroup* UnitGroup = NULL;
+	TArray<UUnitGroup*> OldGroups;
+	OldGroups.Empty();
+	if (SelectedUnits.Num() > 0)
+	{
+		UnitGroup = SelectedUnits[0]->UnitGroup;
+	}
+	else
+	{
+		return;
+	}
+	for (int i = 0; i < SelectedUnits.Num(); i++)
+	{
+		UUnitGroup* OldGroup = SelectedUnits[i]->UnitGroup;
+		if (UnitGroup != OldGroup && OldGroup != NULL)
+		{
+			OldGroups.Add(SelectedUnits[i]->UnitGroup);
+		}
+	}
+	//removing selected units from unitgroups
+	for (int i = 0; i < OldGroups.Num(); i++)
+	{
+		UUnitGroup* OldGroup = OldGroups[i];
+		for (int j = 0; j < SelectedUnits.Num(); j++)
+		{
+			OldGroup->RemoveUnit(SelectedUnits[j]);
+		}
+		OldGroup->RecalculateMovement();
+	}
+	bool AlreadyInUnitGroup = (UnitGroup != NULL) && (OldGroups.Num() == 0);
+	if (AlreadyInUnitGroup)
+	{
+		if (UnitGroup->Num() > SelectedUnits.Num())
+		{
+			//oldgroup contains all the selected units and more
+			//now it will contain only the "more"
+			UUnitGroup* OldGroup = UnitGroup;
+			for (int i = 0; i < SelectedUnits.Num(); i++)
+			{
+				OldGroup->RemoveUnit(SelectedUnits[i]);
+
+			}
+
+
+			UnitGroup = NewObject<class UUnitGroup>();
+			UnitGroup->SetUnits(SelectedUnits);
+			UnitGroup->MoveToFormationPreset(ShapeType);
+
+
+			if (SelectedUnits.Contains(UnitGroup->Leader))
+			{
+				OldGroup->RecalculateMovement();
+			}
+		}
+		else
+		{
+			UnitGroup->SetUnits(SelectedUnits);
+			UnitGroup->MoveToFormationPreset(ShapeType);
+		}
+	}
+	if (!AlreadyInUnitGroup)
+	{
+		UnitGroup = NewObject<class UUnitGroup>();
+		UnitGroup->SetUnits(SelectedUnits);
+		UnitGroup->MoveToFormationPreset(ShapeType);
+	}
+
+
+}
+
+void UUnitGroup::MoveToFormationPreset(const TEnumAsByte<EShapeEnum::Type>& ShapeType)
+{
+	CurrentShape = ShapeType;
+	switch (ShapeType)
+	{
+	case EShapeEnum::SE_ONE_TRIANGLE:
+		MoveToFormationTriangle();
+		break;
+	case EShapeEnum::SE_SQUARE:
+		break;
+	case EShapeEnum::SE_NONE:
+		break;
+	}
+
+}
+
+
+void UUnitGroup::SetWorld(UWorld* _World)
 {
 	World = _World;
 }
 
-void UUnitGroup::SetUnits(TArray<ABallertsCharacter*> _Units)
+void UUnitGroup::SetUnits(TArray<ABallertsCharacter*> TheUnits)
 {
-	Units = _Units;
+	Units = TheUnits;
 
 	for (int i = 0; i < Units.Num(); i++)
 	{
@@ -228,7 +318,7 @@ void UUnitGroup::RemoveUnit(ABallertsCharacter* Unit)
 	}
 }
 
-int UUnitGroup::Num()
+int32 UUnitGroup::Num()
 {
 	return Units.Num();
 }

@@ -17,7 +17,7 @@ void UFormation::ClearShapes()
 	Shapes.Empty();
 }
 
-void UFormation::AddTriangle_Implementation(const FVector2D& Center, float side, const int32 N)
+void UFormation::AddTriangle(const FVector2D& Center, float side, const int32 N)
 {
 	
 	Shapes.Add(UFormationShape::CreateTriangle(Center, side, N));
@@ -45,3 +45,17 @@ void UFormation::AddTriangle_Implementation(const FVector2D& Center, float side,
 //
 //	return Res;
 //}
+
+
+void UFormation::BindAllShapesToLeader(ABallertsCharacter* TheLeader)
+{
+	for (int i = 0; i < Shapes.Num(); i++)
+	{
+		Shapes[i]->BindToLeader(TheLeader);
+	}
+}
+
+void UFormation::AssignAllUnits(const TArray<ABallertsCharacter*>& Units)
+{
+	UFormationShape::AssignShapesToUnits(Shapes, Units);
+}

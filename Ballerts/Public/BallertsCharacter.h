@@ -23,6 +23,9 @@ class ABallertsCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = UnitGroup)
 	UUnitGroup* UnitGroup;
 
+	UFUNCTION(BlueprintCallable, Category = Unit)
+	FVector2D GetActorLocation2D();
+
 protected:
 	//UUnitGroup* UnitGroup;
 

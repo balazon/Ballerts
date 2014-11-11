@@ -55,7 +55,7 @@ void ABallertsPlayerController::SetupInputComponent()
 	InputComponent->BindAction("SetDestination", IE_Released, this, &ABallertsPlayerController::OnSetDestinationReleased);
 
 	// support touch devices 
-	//InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &ABallertsPlayerController::MoveToTouchLocation);
+	//InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &ABallertsPlayerController::TouchPressed);
 	//InputComponent->BindTouch(EInputEvent::IE_Repeat, this, &ABallertsPlayerController::MoveToTouchLocation);
 
 	InputComponent->BindAction("Click", IE_Pressed, this, &ABallertsPlayerController::OnClickPressed);
@@ -92,6 +92,9 @@ void ABallertsPlayerController::BeginPlay()
 	bShowMouseCursor = true;
 	Hud->EnableInput(this);
 	
+	UUnitGroup::SetWorld(GetWorld());
+
+
 }
 
 void ABallertsPlayerController::MoveToMouseCursor()
@@ -105,6 +108,11 @@ void ABallertsPlayerController::MoveToMouseCursor()
 		// We hit something, move there
 		SetNewMoveDestination(Hit.ImpactPoint);
 	}
+}
+
+void ABallertsPlayerController::TouchPressed(const ETouchIndex::Type FingerIndex, const FVector Location)
+{
+
 }
 
 void ABallertsPlayerController::MoveToTouchLocation(const ETouchIndex::Type FingerIndex, const FVector Location)
@@ -135,85 +143,14 @@ void ABallertsPlayerController::MoveToActor(AActor* TargetActor)
 
 void ABallertsPlayerController::SetNewMoveDestination(const FVector DestLocation)
 {
-	UUnitGroup* UnitGroup = NULL;
-	if (SelectedUnits.Num() > 0)
-	{
-		UnitGroup = SelectedUnits[0]->UnitGroup;
-	}
-	bool AlreadyInUnitGroup = (UnitGroup != NULL);
-	for (int i = 0; i < SelectedUnits.Num(); i++)
-	{
-		if (UnitGroup != SelectedUnits[i]->UnitGroup)
-		{
-			AlreadyInUnitGroup = false;
-			break;
-		}
-	}
-	if (!AlreadyInUnitGroup)
-	{
-		UnitGroup = NewObject<class UUnitGroup>();
-		UnitGroup->SetWorld(GetWorld());
-		UnitGroup->SetUnits(SelectedUnits);
-	}
-
-	UnitGroup->SetDestination(DestLocation);
+	
+	UUnitGroup::Move(FVector2D(DestLocation.X, DestLocation.Y), SelectedUnits);
 	
 }
 
 void ABallertsPlayerController::MoveToFormation()
 {
-
-	UUnitGroup* UnitGroup = NULL;
-	if (SelectedUnits.Num() > 0)
-	{
-		UnitGroup = SelectedUnits[0]->UnitGroup;
-	}
-	bool AlreadyInUnitGroup = (UnitGroup != NULL);
-	for (int i = 0; i < SelectedUnits.Num(); i++)
-	{
-		if (UnitGroup != SelectedUnits[i]->UnitGroup)
-		{
-			AlreadyInUnitGroup = false;
-			break;
-		}
-	}
-	if (AlreadyInUnitGroup)
-	{
-		if (UnitGroup->Num() > SelectedUnits.Num())
-		{
-
-		}
-		else
-		{
-			UnitGroup->SetUnits(SelectedUnits);
-		}
-	}
-	if (!AlreadyInUnitGroup)
-	{
-		UnitGroup = NewObject<class UUnitGroup>();
-		UnitGroup->SetWorld(GetWorld());
-	}
-	else if (UnitGroup->CurrentShape != EShapeEnum::SE_NONE)
-	{
-		UnitGroup->MoveToFormation(EShapeEnum::SE_NONE);
-		UE_LOG(LogTemp, Warning, TEXT("FORMATION"));
-		return;
-	}
-	
-		
-
-	
-		
-	
-	UnitGroup->SetUnits(SelectedUnits);
-	UnitGroup->MoveToFormation(EShapeEnum::SE_TRIANGLE);
-	TArray<FVector2D> FormationPoints = UnitGroup->Formation->AllPoints();
-	CurrentTargets.Init(FormationPoints.Num());
-	for (int i = 0; i < FormationPoints.Num(); i++)
-	{
-		CurrentTargets[i] = FVector(FormationPoints[i], 120.f);
-	}
-	
+	UUnitGroup::MoveToFormation(SelectedUnits, EShapeEnum::SE_ONE_TRIANGLE);
 	
 }
 
@@ -435,11 +372,6 @@ void ABallertsPlayerController::OnRightClickPressed()
 }
 
 
-TArray<FVector> ABallertsPlayerController::GetTargets()
-{
-	return CurrentTargets;
-}
-
 void ABallertsPlayerController::AddUnitToSelection(ABallertsCharacter* Unit)
 {
 	SelectedUnits.Add(Unit);
@@ -454,33 +386,37 @@ void ABallertsPlayerController::RemoveUnitFromSelection(ABallertsCharacter* Unit
 
 void ABallertsPlayerController::OnTestButtonPressed()
 {
-	TArray<float> Weights;
-	/*Weights.Init(16);
+	//TArray<float> Weights;
 
-	Weights[0] = 8;
-	Weights[1] = 3;
-	Weights[2] = 5;
-	Weights[3] = 4;
-	Weights[4] = 7;
-	Weights[5] = 1;
-	Weights[6] = 6;
-	Weights[7] = 2;
-	Weights[8] = 9;
-	Weights[9] = 3;
-	Weights[10] = 4;
-	Weights[11] = 1;
-	Weights[12] = 4;
-	Weights[13] = 2;
-	Weights[14] = 7;
-	Weights[15] = 5;*/
+	//
+	//Weights.Init(10000);
+	//for (int i = 0; i < 10000; i++) Weights[i] = FMath::FRandRange(1.f, 10.f);
+
+	//TArray<int32> res;
+	//UBalaLib::Assignment(Weights, 100, res);
+
+	////assignment has a while(true), but if the algorithm was implemented well, it shouldnt be a problem
+	//UE_LOG(LogTemp, Warning, TEXT("Assignment OK"));
+
+	if (SelectedUnits.Num() > 0)
+	{
+		TMap<int32, int32> TestMap;
+		TestMap.Add(2, 3);
+
+		/*AAIControllerBase* Controller = NULL;
+
+		Controller = Cast<AAIControllerBase>(SelectedUnits[0]->GetController());
+		TMap<const AAIControllerBase*, int32> TestMap;
+		TestMap.Empty();
+		TestMap[Controller] = 5;
+
+		int val = TestMap[Controller];*/
+
+
+
+		UE_LOG(LogTemp, Warning, TEXT("TMap test OK"));
+	}
 	
-	Weights.Init(10000);
-	for (int i = 0; i < 10000; i++) Weights[i] = FMath::FRandRange(1.f, 10.f);
 
-	TArray<int32> res;
-	UBalaLib::Assignment(Weights, 100, res);
-
-	//assignment has a while(true), but if the algorithm was implemented well, it shouldnt be a problem
-	UE_LOG(LogTemp, Warning, TEXT("Assignment OK"));
 
 }
