@@ -3,6 +3,9 @@
 #include "Ballerts.h"
 #include "AIControllerBase.h"
 
+#include "FormationShape.h"
+#include "Engine.h"
+
 
 AAIControllerBase::AAIControllerBase(const class FPostConstructInitializeProperties& PCIP)
 	: Super(PCIP)
@@ -35,4 +38,11 @@ void AAIControllerBase::SetTargetLocationAsLeader_Implementation(const FVector& 
 void AAIControllerBase::SetShape_Implementation(UFormationShape* Shape)
 {
 	CurrentShape = Shape;
+	GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, TEXT("Controller super setSHape OK"));
+	UpdateBehavior();
 }
+
+//void AAIControllerBase::UpdateBehavior_Implementation()
+//{
+//
+//}

@@ -12,6 +12,8 @@
 #include "BalaLib.h"
 #include "Formation.h"
 
+#include "Engine.h"
+
 
 UUnitGroup::UUnitGroup(const class FPostConstructInitializeProperties& PCIP)
 	: Super(PCIP)
@@ -113,6 +115,9 @@ void UUnitGroup::RecalculateMovement()
 		//NavSys->SimpleMoveToLocation(ClosestChar->GetController(), DestLocation);
 		Leader = ClosestUnit;
 
+		FVector2D LeaderLoc = Leader->GetActorLocation2D();
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, FString::Printf(TEXT("Leader is: %.1f %.1f"), LeaderLoc.X, LeaderLoc.Y));
+
 		Formation->BindAllShapesToLeader(Leader);
 
 		AAIControllerBase* Controller = Cast<AAIControllerBase>(Leader->GetController());
@@ -122,6 +127,7 @@ void UUnitGroup::RecalculateMovement()
 
 void UUnitGroup::Move(FVector2D Target, const TArray<ABallertsCharacter*> SelectedUnits)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("UUnitGroup::Move"));
 	UUnitGroup* UnitGroup = NULL;
 	TArray<UUnitGroup*> OldGroups;
 	OldGroups.Empty();
@@ -193,7 +199,7 @@ void UUnitGroup::Move(FVector2D Target, const TArray<ABallertsCharacter*> Select
 
 void UUnitGroup::MoveToFormation(const TArray<ABallertsCharacter*> SelectedUnits, const TEnumAsByte<EShapeEnum::Type>& ShapeType)
 {
-
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("UUnitGroup::MoveToFormation"));
 	UUnitGroup* UnitGroup = NULL;
 	TArray<UUnitGroup*> OldGroups;
 	OldGroups.Empty();

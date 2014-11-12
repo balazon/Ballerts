@@ -6,6 +6,8 @@
 
 #include "AIControllerBase.h"
 
+#include "Engine.h"
+
 
 
 UFormationShape::UFormationShape(const class FPostConstructInitializeProperties& PCIP)
@@ -87,8 +89,20 @@ void UFormationShape::AssignShapesToUnits(const TArray<UFormationShape*>& Shapes
 	}
 	TArray<int32> indexAssigns;
 	UBalaLib::Assignment(Weights, Units.Num(), indexAssigns);
+
+	//debug
+	TArray<FVector2D> ShapePoints = Shapes[0]->Points;
+	GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, TEXT("Shape0 points :"));
+	for (int i = 0; i < ShapePoints.Num(); i++)
+	{
+		FVector2D OnePoint = ShapePoints[i];
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, FString::Printf(TEXT("Point #%d : %.1f %.1f"), i, OnePoint.X, OnePoint.Y));
+
+	}
+	//debug end
+
 	//Setting shapes for respective controllers
-	for (int32 i = 0; i < Units.Num(); i++)
+	for (int i = 0; i < Units.Num(); i++)
 	{
 		ABallertsCharacter* Unit = Units[i];
 		if (Unit)
@@ -96,13 +110,21 @@ void UFormationShape::AssignShapesToUnits(const TArray<UFormationShape*>& Shapes
 			
 			AAIControllerBase* Controller = Cast<AAIControllerBase>(Unit->GetController());
 			int j = IndexOfShape(indexAssigns[i], ShapeIndices);
-			
+			GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, TEXT("Controller setShape BEGIN"));
 			Controller->SetShape(Shapes[ShapeIndices[j]]);
+			GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, TEXT("Controller setShape END"));
+
 			//UFormationShape* Shape = Shapes[ShapeIndices[j]];
 			//Shape->Assignments[Controller] = 0;
 			
+			//debug
+			FVector2D Loc = Unit->GetActorLocation2D() - Shapes[0]->Pivot;
+			GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue, FString::Printf(TEXT("Unit #%d : %.1f %.1f"), indexAssigns[i] - ShapeIndices[j], Loc.X, Loc.Y));
+			//debug end
+
 			Shapes[ShapeIndices[j]]->Assignments.Add(Controller, indexAssigns[i] - ShapeIndices[j]);
 			//UE_LOG(LogTemp, Warning, TEXT("Path: %.2f %.2f"), res[indexAssigns[i]].X, res[indexAssigns[i]].Y);
+			
 		}
 	}
 }

@@ -7,6 +7,9 @@
 #include "AIController.h"
 #include "AIControllerBase.generated.h"
 
+
+class UFormationShape;
+
 /**
  * 
  */
@@ -17,6 +20,9 @@ class BALLERTS_API AAIControllerBase : public AAIController
 
 	UFUNCTION(BlueprintNativeEvent, Category = Commands)
 	void SetShape(UFormationShape* Shape);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = Commands)
+	void UpdateBehavior();
 
 	UFUNCTION(BlueprintNativeEvent, Category = Commands)
 	void SetTargetLocation(const FVector& Location);

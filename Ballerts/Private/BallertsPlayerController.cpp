@@ -80,6 +80,7 @@ void ABallertsPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("Test", IE_Pressed, this, &ABallertsPlayerController::OnTestButtonPressed);
 
+	
 
 }
 
@@ -93,7 +94,8 @@ void ABallertsPlayerController::BeginPlay()
 	Hud->EnableInput(this);
 	
 	UUnitGroup::SetWorld(GetWorld());
-
+	
+	
 
 }
 
