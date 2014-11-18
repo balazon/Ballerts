@@ -46,3 +46,9 @@ void AAIControllerBase::SetShape_Implementation(UFormationShape* Shape)
 //{
 //
 //}
+
+
+void AAIControllerBase::MyTestFunc_Implementation()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta, TEXT("aibase testfunc cpp"));
+}

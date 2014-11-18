@@ -18,6 +18,9 @@ class ABallertsPlayerController : public APlayerController
 	UFUNCTION(BlueprintCallable, Category = Commands)
 	void MoveToFormation();
 
+	UFUNCTION(BlueprintCallable, Category = Test)
+	void OnTestButtonPressed();
+
 protected:
 
 	/** True if the controlled character should navigate to the mouse cursor. */
@@ -85,7 +88,7 @@ protected:
 
 	void OnRightClickPressed();
 
-	void OnTestButtonPressed();
+	
 
 
 };

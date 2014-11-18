@@ -42,4 +42,7 @@ class BALLERTS_API AAIControllerBase : public AAIController
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Formation)
 	FVector2D LeaderTarget;
+
+	UFUNCTION(BlueprintNativeEvent, Category = Test)
+	void MyTestFunc();
 };

@@ -402,21 +402,9 @@ void ABallertsPlayerController::OnTestButtonPressed()
 
 	if (SelectedUnits.Num() > 0)
 	{
-		TMap<int32, int32> TestMap;
-		TestMap.Add(2, 3);
+		AAIControllerBase* Controller = Cast<AAIControllerBase>(SelectedUnits[0]->GetController());
 
-		/*AAIControllerBase* Controller = NULL;
-
-		Controller = Cast<AAIControllerBase>(SelectedUnits[0]->GetController());
-		TMap<const AAIControllerBase*, int32> TestMap;
-		TestMap.Empty();
-		TestMap[Controller] = 5;
-
-		int val = TestMap[Controller];*/
-
-
-
-		UE_LOG(LogTemp, Warning, TEXT("TMap test OK"));
+		Controller->MyTestFunc();
 	}
 	
 
